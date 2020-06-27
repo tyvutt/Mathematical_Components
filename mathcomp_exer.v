@@ -1,7 +1,7 @@
 (*******    Mathematical Components    *******)
 (* Part One  : Basics for Formal Mathematics *)
 (* Chapter 1 : Functions and Computation     *)
-Section Chap1.
+
 From mathcomp Require Import all_ssreflect.
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -90,7 +90,6 @@ Eval compute in \sum_( 1 <= i < 5 ) i.
 (* Exercise 4 Find the n-th element *)
 (* Exercise 5 List reversal *)
 (* ** Exercise 7 All words of size n *)
-End Chap1.
 
 (* Chapter 2 : First Steps in Formal Proofs *)
 Section Chap2.
@@ -105,8 +104,27 @@ Check 3 = 4.
 Locate "=".
 About eq.
 
+Lemma negbK b : ~~ (~~ b) = b.
+Proof. by case: b. Qed.
+
+Lemma leqn0 n : (n <= 0) = (n == 0).
+Proof.
+move: n.
+case.
+by[].
+move=> k.
+by[].
+(* by case: => [|k]. *)
+Qed.
+
+(* Exercise 8 Truth tables *)
+(* Exercise 9 Rewriting *)
+(* * Exercise 10 Induction *)
+(* ** Exercise 11 Multiple induction *)
+
 End Chap2.
 (* Chapter 3 : Type Theory *)
+Inductive nat : Type := O : nat | S (n : nat).
 (* Chapter 4 : First Steps in Formal Proofs *)
 
 
