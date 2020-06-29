@@ -1,7 +1,4 @@
 (*******    Mathematical Components    *******)
-(* Part One  : Basics for Formal Mathematics *)
-(* Chapter 1 : Functions and Computation     *)
-
 From mathcomp Require Import all_ssreflect.
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -9,11 +6,31 @@ Unset Printing Implicit Defensive.
 
 Example Gauss n : \sum_(0 <= i < n.+1) i = (n * n.+1) %/ 2.
 Proof.
+(* big_nat1 :
+forall (R : Type) (idx : R) (op : Monoid.law idx) (n : nat) (F : nat -> R),
+\big[op/idx]_(n <= i < n.+1) F i = F n *)
 elim: n =>[|n IHn]; first by apply: big_nat1.
+(* big_nat_recr :
+forall (R : Type) (idx : R) (op : Monoid.law idx) (n m : nat) (F : nat -> R),
+m <= n ->
+\big[op/idx]_(m <= i < n.+1) F i = op (\big[op/idx]_(m <= i < n) F i) (F n) *)
+(* addnC : commutative addn *)
+(* divnMDl : forall q m d : nat, 0 < d -> (q * d + m) %/ d = q + m %/ d *)
 rewrite big_nat_recr //= IHn addnC -divnMDl //.
-by rewrite mulnS muln1 -addnA -mulSn -mulnS.
+(* mulnS : forall m n : nat, m * n.+1 = m + m * n *)
+rewrite mulnS.
+(* muln1 : right_id 1 muln *)
+rewrite muln1.
+(* addnA : associative addn *)
+rewrite -addnA.
+(* mulSn : forall m n : nat, m.+1 * n = n + m * n *)
+rewrite -mulSn.
+rewrite -mulnS.
+reflexivity.
 Qed.
 
+(* Part One  : Basics for Formal Mathematics *)
+(* Chapter 1 : Functions and Computation     *)
 Definition f (n : nat) : nat := n + 1.
 Print f.
 Eval compute in f 3.
@@ -85,6 +102,7 @@ Eval compute in \sum_( 1 <= i < 3 ) (i * 2 - 1).
 Eval compute in \sum_( 1 <= i < 5 ) i.
 
 (* Exercise 1 The triple data type *)
+
 (* Exercise 2 Addition with iteration *)
 (* Exercise 3 Multiplication with iteration *)
 (* Exercise 4 Find the n-th element *)
@@ -153,8 +171,31 @@ move => hP.
 move: (hrl hP).
 by[].
 Qed.
+
+(* Exercise 12 reflect *)
+(* Exercise 13 eqnP *)
+(* Exercise 14 Injectivity to nat *)
+(* Exercise 15 Characterization of max *)
+
 (* Part Two  : Formalization Techniques *)
 (* Chapter 5 : Implicit Parameters *)
+Definition id A (a : A) : A := a.
+Check (id _ 3).
+Arguments id {A} a.
+Check (id 3).
+Check (@id _ 3).
+
+Check (fun x => @id nat x).
+
+Lemma example q : prime q -> 0 < q.
+Proof.
+move => pr_q.
+(* prime_gt1 : forall p : Datatypes.nat, prime p -> 1 < p *)
+have q_gt1 := (@prime_gt1 _ pr_q).
+(* ltnW : forall m n : Datatypes.nat, m < n -> m <= n  *)
+exact (ltnW q_gt1).
+Qed.
+
 (* Chapter 6 : Sub-Types *)
 (* Chapter 7 : Natural numbers *)
 
