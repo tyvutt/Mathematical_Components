@@ -124,10 +124,35 @@ Qed.
 
 End Chap2.
 (* Chapter 3 : Type Theory *)
-Inductive nat : Type := O : nat | S (n : nat).
+Check ex.
+Check or_ind.
+
+Inductive True : Prop := I.
+Inductive False : Prop := .
+Print not.
+
+Definition not (A : Prop) := A -> False.
+Definition exfalso (P : Prop) (f : False) : P :=
+  match f with end. (* no constructors, no branches *)
+
 (* Chapter 4 : First Steps in Formal Proofs *)
-
-
+Definition bool_Prop_equiv (P : Prop) (b : bool) :=
+  b = true <-> P. (* Reflection views *)
+Lemma test_bool_Prop_equiv b P : bool_Prop_equiv P b -> P \/ ~ P.
+Proof.
+case b.
+case.
+move => hlr hrl.
+left.
+apply: hlr.
+reflexivity.
+case.
+move => hlr hrl.
+right.
+move => hP.
+move: (hrl hP).
+by[].
+Qed.
 (* Part Two  : Formalization Techniques *)
 (* Chapter 5 : Implicit Parameters *)
 (* Chapter 6 : Sub-Types *)
