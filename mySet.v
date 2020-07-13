@@ -1,26 +1,30 @@
 (* From mathcomp Require Import all_ssreflect. *)
 Set Implicit Arguments.
-Unset Strict Implicit.
+(* Unset Strict Implicit. *)
 (* Import Prenex Implicits. *)
 
+(* Require Import Ensembles. *)
+
 (* 集合 *)
+(* R(a) ⇔ a ∈ {x ∈ M | R(x)} *)
 Definition mySet (M: Type) := M -> Prop.
 (* 部分集合 *)
 Definition belong {M: Type}(A: mySet M)(x: M) :Prop
  := A x.
 Notation "x ∈ A" := (belong A x) (at level 11).
+(* 補集合の補集合は元の集合 *)
 Axiom axiom_mySet : forall (M: Type)(A: mySet M),
  forall (x: M), (x ∈ A) \/ ~(x ∈ A).
+(* 包含関係*)
+Definition mySub {M} := fun (A B : mySet M) =>
+ (forall (x: M), (x ∈ A) -> (x ∈ B)).
+Notation "A ⊂ B" := (mySub A B) (at level 11).
 (* 空集合 *)
 Definition myEmptySet {M: Type} : mySet M :=
  fun _ => False.
 (* 母集合 *)
 Definition myMotherSet {M: Type} : mySet M :=
  fun _ => True.
-(* 包含関係・等号 *)
-Definition mySub {M} := fun (A B : mySet M) =>
- (forall (x: M), (x ∈ A) -> (x ∈ B)).
-Notation "A ⊂ B" := (mySub A B) (at level 11).
 
 Section 包含関係.
 Variable M: Type.
@@ -29,8 +33,8 @@ Lemma Sub_Mother (A : mySet M) : A ⊂ myMotherSet.
 Proof.
  unfold mySub.
  unfold belong.
- intros x h.
  unfold myMotherSet.
+ intros.
  trivial.
 Qed.
 
@@ -39,7 +43,7 @@ Proof.
  unfold mySub.
  unfold belong.
  unfold myEmptySet.
- intros x h.
+ intros.
  contradiction.
 Qed.
 
@@ -47,8 +51,8 @@ Lemma rfl_Sub (A :mySet M) : (A ⊂ A).
 Proof.
  unfold mySub.
  unfold belong.
- intros x h.
- apply h. (* assumption. *)
+ intros.
+ assumption. (* trivial *)
 Qed.
 
 Lemma transitive_Sub (A B C : mySet M) :
@@ -69,7 +73,7 @@ Definition eqmySet {M: Type} :=
 Axiom axiom_ExteqmySet : forall {M: Type}(A B: mySet M),
  eqmySet A B -> A = B.
 
-Section 集合の等号.
+Section 等号.
 Variable Mother: Type.
 
 Lemma rfl_eqS (A: mySet Mother) : eqmySet A A.
@@ -83,13 +87,13 @@ Qed.
 Lemma sym_eqS (A B : mySet Mother) : eqmySet A B -> eqmySet B A.
 Proof.
 unfold eqmySet.
-intros h.
+intros H.
 split.
-destruct h as [h1 h2].
-apply h2.
-apply h.
+destruct H. (* as [H H0] *)
+apply H0.
+apply H.
 Qed.
-End 集合の等号.
+End 等号.
 
 (* 補集合 *)
 Definition myComplement {M: Type}(A: mySet M) : mySet M :=
@@ -107,19 +111,16 @@ Lemma cEmpty_Mother : (@myEmptySet M)^c = myMotherSet.
 Proof.
 apply axiom_ExteqmySet.
 unfold eqmySet.
-split. 
 unfold mySub.
 unfold myComplement.
-intros x h.
 unfold myMotherSet.
 unfold belong.
-trivial.
-
-intros x.
-intros Hfull.
-unfold myComplement.
-unfold belong.
 unfold myEmptySet.
+split. 
+intros x h.
+trivial.
+intros x.
+intros.
 auto. (* intuition. *)
 Qed.
 
@@ -127,18 +128,15 @@ Lemma cc_cancel (A : mySet M) : (A^c)^c = A.
 Proof.
 apply axiom_ExteqmySet.
 unfold eqmySet.
-split.
 unfold mySub.
 unfold myComplement.
-intros x H.
+split.
+intros.
 generalize (axiom_mySet A x).
-intros h.
+(* intros. *)
 intuition.
 contradiction.
 
-unfold mySub.
-unfold myComplement.
-intros x H.
 intuition.
 intros H0.
 contradiction.
@@ -147,8 +145,7 @@ Qed.
 Lemma cMother_Empty : (@myMotherSet M)^c = myEmptySet.
 Proof.
 rewrite <- cEmpty_Mother.
-rewrite cc_cancel.
-reflexivity.
+apply cc_cancel.
 Qed.
 End 演算.
 
@@ -201,29 +198,24 @@ Lemma transitive_Inj (fgAC: (f ・ g) ∈Map A \to C) :
 mySetInj fBC -> mySetInj gAB -> mySetInj fgAC.
 Proof.
 unfold mySetInj.
-intros Hinjf.
-intros Hinjg.
-intros x y HxA HyA H.
-apply (Hinjg x y HxA HyA).
-apply (Hinjf (g x)(g y)).
+intros.
+apply (H0 x y H1 H2).
+apply (H (g x)(g y)).
 apply gAB.
-apply HxA.
+apply H1.
 apply gAB.
-apply HyA.
-apply H.
+apply H2.
+apply H3.
 Qed.
 
 Lemma CompoTrans : (f ・ g) ∈Map A \to C.
 Proof.
-revert fBC.
-revert gAB.
 unfold MapCompo.
 unfold myMap.
-intros Hab Hbc.
-intros t Ha.
-generalize (Hab t Ha).
-generalize (Hbc (g t)). (* g t : M2 *)
-trivial.
+intros.
+revert gAB. (* generalize gAB x H *)
+revert fBC. (* generalize fBC x H *)
+auto.
 Qed.
 
 (* ImSub: Im g ⊂ B *)
@@ -232,158 +224,11 @@ Proof.
 unfold mySub.
 unfold belong.
 unfold ImgOf.
-intros x h.
-destruct h as [x0 h].
+intros.
+destruct H.
 intuition.
-rewrite H.
+rewrite H0.
 apply gAB.
-apply H0.
+assumption.
 Qed.
 End 写像.
-
-(* 有限型のライブラリ *)
-Variable M : finType.
-
-Definition p2S (pA: pred M) : mySet M := 
-  fun(x: M) => if (x \in pA) then True else False.
-
-Notation "\{ x 'in' pA \}" := (p2S pA).
-Print pred.
-Section finTypeを用いた有限集合.
-Lemma Mother_predT : myMotherSet = \{ x in M \}.
-Proof. exact. Qed.
-
-(* reflect
-   : Prop -> bool -> Set *)
-Lemma myFinBelongP (x: M) (pA: pred M) :
-reflect (x ∈ \{ x in pA \}) (x \in pA).
-Proof.
-unfold p2S.
-unfold belong.
-(* iffP
-   : forall (P Q : Prop) (b : bool),
-       reflect P b -> (P -> Q) -> (Q -> P) -> reflect Q b
-   idP
-   : reflect ?b1 ?b1
-   iffP idP
-   : (?b -> ?Q) -> (?Q -> ?b) -> reflect ?Q ?b *)
-apply (iffP idP) => H.
-by rewrite (_ : (x \in pA) = true).
-have testH : (x \in pA) || ~~(x \in pA).
-set t := x \in pA.
-revert t.
-elim.
-done.
-done.
-revert testH.
-move /orP.
-elim.
-done.
-intros Harg.
-rewrite (_: (x \in pA) = false) in H.
-done.
-(* negbTE
-   : forall b : bool, ~~ b -> b = false *)
-apply negbTE.
-done.
-Qed.
-
-Lemma myFinSubsetP (pA pB : pred M) :
-  reflect (\{ x in pA \} ⊂ \{ x in pB \})
-  (pA \subset pB).
-Proof.
-rewrite /mySub.
-apply /(iffP idP) => H.
-move => x.
-move=> /myFinBelongP.
-move => H2.
-apply /myFinBelongP.
-move: H.
-(* subsetP
-   : reflect {subset ?A <= ?B} (?A \subset ?B) *)
-move => /subsetP.
-(* Definition sub_mem {T} mp1 mp2 := 
-    forall x : T, in_mem x mp1 -> in_mem x mp2. *)
-rewrite /sub_mem.
-apply.
-by[].
-apply /subsetP.
-rewrite /sub_mem.
-move => x.
-move /myFinBelongP.
-move => HpA.
-apply /myFinBelongP.
-apply H.
-by[].
-Qed.
-
-Lemma  Mother_Sub (pA : pred M) :
-  myMotherSet ⊂ \{ x in pA \} -> forall x, x ∈ \{ x in pA \}.
-Proof.
-rewrite Mother_predT.
-move => /myFinSubsetP.
-move => H.
-move => x.
-apply /myFinBelongP.
-(* predT_subset
-	 : forall (T : finType) (A : {pred T}),
-       T \subset A -> forall x : T, x \in A *)
-apply predT_subset.
-apply H.
-Qed.
-
-Check subset_trans.
-Lemma transitive_Sub' (pA pB pC : pred M):
- \{ x in pA \} ⊂ \{ x in pB \}
- -> \{ x in pB \} ⊂ \{ x in pC \}
- -> \{ x in pA \} ⊂ \{ x in pC \}.
-Proof.
-move /myFinSubsetP.
-move => HAB.
-move => /myFinSubsetP.
-move => HBC.
-apply /myFinSubsetP.
-apply /(subset_trans HAB HBC).
-Qed.
-
-Lemma transitive_Sub'' (pA pB pC : pred M):
- \{ x in pA \} ⊂ \{ x in pB \}
- -> \{ x in pB \} ⊂ \{ x in pC \}
- -> \{ x in pA \} ⊂ \{ x in pC \}.
-Proof. apply transitive_Sub. Qed.
-End finTypeを用いた有限集合.
-
-
-Section ライブラリfinsetの利用.
-From mathcomp Require Import finset.
-
-Variable M : finType.
-Lemma deMorgan (A B C : {set M}) :
-  (A :&: B) :|: C = (A :|: C) :&: (B :|: C).
-Proof.
-(* setP
-   : forall (T : finType) (A B : {set T}), 
-     A =i B <-> A = B   *)
-(* Notation "A =i B" := 
-     (eq_mem (mem A) (mem B)) : type_scope. *)
-apply /setP.
-intros x.
-(* in_setU
-	 : forall (T : finType) (x : T) (A B : {set T}),
-     (x \in A :|: B) = (x \in A) || (x \in B)   *)
-(* in_setI
-	 : forall (T : finType) (x : T) (A B : {set T}),
-       (x \in A :&: B) = (x \in A) && (x \in B) *)
-rewrite inE.
-rewrite inE.
-rewrite inE.
-rewrite inE.
-rewrite inE.
-(* rewrite  5!inE. *)
-(* rewrite   !inE  *)
-(* orb_andl
-	 : left_distributive orb andb *)
-rewrite <- orb_andl.
-done.
-Qed.
-End ライブラリfinsetの利用.
